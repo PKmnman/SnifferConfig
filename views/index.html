@@ -1,0 +1,21 @@
+{% extends "shared/_layout.html" %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-md-row justify-content-evenly mt-3 pt-3">
+    <div class="block-btn">
+        <div>Account</div>
+    </div>
+    <div class="block-btn" onclick="navigate('{% url 'devices' %}')">
+        <div>
+            Devices
+        </div>
+    </div>
+    <div class="block-btn" onclick="navigate('{% url 'wifi-list' %}')">
+        <div>
+            Wifi
+        </div>
+    </div>
+</div>
+
+{% endblock %}

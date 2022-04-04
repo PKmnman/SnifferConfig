@@ -1,0 +1,7 @@
+
+
+$palette-blue: #4076c7;
+
+@mixin bg-blue(){
+    background-color: $palette-blue;
+}

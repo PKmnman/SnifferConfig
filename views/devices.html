@@ -1,0 +1,24 @@
+{% extends "shared/_layout.html" %}
+
+{% block content %}
+
+    <div>
+        {% for device in devices %}
+            <div>
+                <div>
+                    <div>{{ device.location }}</div>
+                    <div>IP Address: {{ device.address }}</div>
+                    <div>Serial Code: {{ device.serial_num }}</div>
+                </div>
+                <div>
+                    <button class="btn btn-primary">Unregister</button>
+
+                </div>
+                <div style="display: none;">
+                    <!-- Update History -->
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

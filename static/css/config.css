@@ -1,0 +1,45 @@
+@media (min-width: 576px) {
+  .block-btn {
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #4076c7;
+    color: #ffffff;
+    font-size: xxx-large;
+    text-shadow: 1px 1px #1a1e21;
+    aspect-ratio: 1/1;
+    width: 25%;
+    height: 25%;
+    transition: transform 0.5s;
+  }
+
+  .block-btn:hover {
+    transform: scale(110%, 110%);
+    cursor: pointer;
+  }
+}
+@media (max-width: 767.98px) {
+  .block-btn {
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #4076c7;
+    color: #ffffff;
+    font-size: xxx-large;
+    text-shadow: 1px 1px #1a1e21;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 100%;
+    height: 150px;
+    transition: transform 0.5s;
+  }
+
+  .block-btn:hover {
+    transform: scale(115%, 125%);
+    cursor: pointer;
+  }
+}
+
+/*# sourceMappingURL=config.css.map */

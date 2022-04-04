@@ -1,0 +1,27 @@
+{% extends 'shared/_layout.html' %}
+
+{% block content %}
+
+    <div style="margin:3rem;">
+        <h1>Network Profiles</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">id</th>
+                    <th scope="col">SSID</th>
+                    <th scope="col">Flags</th>
+                </tr>
+            </thead>
+            {% for network in network_list %}
+               <tr>
+                    <td>{{ network.id }}</td>
+                    <td>{{ network.ssid }}</td>
+                    {% if network.flags is not None %}
+                    <td>{{ network.flags }}</td>
+                    {% endif %}
+               </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{%  endblock %}
