@@ -1,10 +1,13 @@
 
 import re
-from logging import getLogger
+import subprocess as sp
+import logging
 from enum import Enum
-from subprocess import run, PIPE, STDOUT
 from typing import Any, Iterable, Union, Optional, Mapping
 from time import sleep
+from collections import namedtuple
+
+__logger__ = logging.getLogger('root')
 
 class KeyManagement(Enum):
     WPA_PSK = 'WPA-PSK'
@@ -22,17 +25,74 @@ class EapMethod(Enum):
     FAST = 'FAST'
 
 
+class NetworkCommandError(Exception):
+
+    def __init__(self, msg: str = "Network configuration command failed!!", *args):
+        super(NetworkCommandError, self).__init__(msg.format(*args))
+
+
+def wpa_run(command: str, *args: str, interface='wlxe84e0650603f'):
+    if command == '':
+        raise ValueError('wpa_cli command cannot be empty!!')
+
+    wpa_cmd = f"wpa_cli -i {interface} {command} {' '.join(args)}"
+
+    try:
+        proc = sp.run(wpa_cmd, text=True, shell=True, executable='/bin/bash', capture_output=True, check=True)
+    except sp.CalledProcessError as err:
+        raise NetworkCommandError('Failed to execute wpa_cli command: %s', wpa_cmd[8:]) from err
+
+    return proc.stdout
+
+
 def has_field(field: str, dictionary: dict[str, Any]):
     return field in dictionary
 
-def quote_str(val):
+
+def _quote_str(val: str) -> str:
     return f"\"{val}\""
+
+
+def parse_flags(flag_str: str) -> set:
+    flags = set()
+    flag_re = re.compile(r"\[(?P<flag>[^\]\[]+)]")
+    for flag in flag_re.finditer(flag_str):
+        # Check that the flag is empty (just to be safe)
+        if flag['flag'] is not None:
+            flag_data = flag['flag']
+            flags.add(flag_data)
+
+    return flags
+
+
+def parse_scan(scan: str, configured_ssids: Iterable[str] = ()) -> list[Iterable]:
+    # This is a named tuple used to hold the individual scan results
+    ScanResult = namedtuple('ScanResult', ['ssid', 'frequency', 'signal_level', 'flags'])
+    results = scan.splitlines()[1:]
+    # This will be the list of scanned networks that are returned
+    networks = []
+
+    for l in results:
+        fields = l.split()
+        if len(fields) < 5:
+            continue
+
+        # Store fields
+        ssid = fields[4]
+        freq = fields[1]
+        signal_level = fields[2]
+        # Parse Flags
+        flags = parse_flags(fields[3])
+
+        networks.append(ScanResult(ssid, freq, signal_level, flags))
+
+    return networks
+
 
 class NetworkArgs:
     """
     Just a namespace class for processing network profile arguments
     """
-    __logger__ = getLogger('root')
 
     @classmethod
     def create_args(cls, **kwargs):
@@ -66,8 +126,6 @@ class Network:
     key_mgmt : KeyManagement
         The type of key management used in authentication
     """
-
-    __logger__ = getLogger('root')
 
     _ssid: str
     _key_mgmt: KeyManagement = KeyManagement.WPA_PSK
@@ -141,14 +199,14 @@ class Network:
     @property
     def ssid(self) -> str:
         # Surround the ssid in quotes before returning it
-        return quote_str(self._ssid)
+        return _quote_str(self._ssid)
 
     @property
     def password(self) -> str:
         if self.key_mgmt == KeyManagement.WPA_EAP and hasattr(self, '_password'):
-            return quote_str(self._password)
+            return _quote_str(self._password)
         elif self.key_mgmt == KeyManagement.WPA_PSK:
-            return quote_str(self._psk)
+            return _quote_str(self._psk)
 
     @property
     def key_mgmt(self) -> KeyManagement:
@@ -183,86 +241,70 @@ class Network:
             initial_base = (initial_base + "eap=%s\n").format(self.eap)
 
 
-def get_cmd(*cmd):
-    result = ['/etc/bash', '-c']
-    result.extend(*cmd)
-    return result
+def list_networks() -> list[Mapping[str, Any]]:
+    result = wpa_run('list_networks')
+
+    networks = []
+
+    # Parse the output into a list of tuples
+    output = map(lambda line: tuple(line.split()),result.splitlines()[1:])
+
+    # Convert the 2D array into a list of dictionaries
+    for net in output:
+        network = {
+            "id": net[0],
+            "ssid": net[1],
+            "bssid": net[2],
+            "flags": set(),
+            "saved": True
+        }
+        if len(net) > 3:
+            network['flags'] = parse_flags(net[3])
+
+        networks.append(network)
+
+    return networks
 
 
-class NetworkManager:
-
-    __logger__ = getLogger('root')
-    __scan_results = None
-
-    network_profiles = []
-
-    # Scans for wi-fi networks and returns a list of ssid's and strengths
-    async def scan_networks(self):
-        command = get_cmd('wpa_cli scan')
-
-        self.__logger__.info(f"Running network configuration command: {' '.join(command[2:])}")
-        result = run(command, text=True, stdout=PIPE, stderr=STDOUT)
-        if result.returncode != 0:
-            self.__logger__.error("Command returned %s: %s", result.returncode, result.stderr)
-
-        self.__logger__.debug('Output from command: %s', result.stdout)
+async def scan_networks():
+    """Scans and returns a list of available wi-fi networks"""
+    command = 'scan'
+    try:
+        # Start scanning
+        __logger__.info(f"Running network configuration command: %s", command)
+        result = wpa_run(command)
+        __logger__.debug('Output from command: %s', result)
 
         # Wait for the results to populate before running retrieval command
-        self.__logger__.info("Waiting for scan results...")
+        __logger__.info("Waiting for scan results...")
         sleep(5)
+        command = 'scan_results'
 
         # Get scan results
-        command = get_cmd('wpa_cli scan_results')
-        self.__logger__.info(f"Running network configuration command: %s", " ".join(command[2:]))
-        result = run(command, text=True, stdout=PIPE, stderr=STDOUT)
-        self.__logger__.debug('Output from command: %s', result.stdout)
+        __logger__.info(f"Running network configuration command: %s", command)
+        result = wpa_run(command)
+        __logger__.debug('Output from command: %s', result)
 
-        # TODO: Parse out SSID (and optionally signal strength) from the command output
-
-        ## Return a list of JSON-like objects (ssid & signal_strength)
-
-
-    def add_network(self, profile: Union[Network, dict]):
-        # TODO: Implement function to add a network profile
-        raise NotImplementedError()
-
-        # Check the type of the passed profile
-
-        ## If it's a dict, try converting it to a Network object
+    except NetworkCommandError as err:
+        __logger__.error("Failed to execute %s command!!", command, exc_info=err)
+        raise RuntimeError() from err
+    return parse_scan(result)
 
 
-    def save_config(self):
-        # TODO: Have wpa_supplicant save it's config
-        raise NotImplementedError()
+def save_config():
+    # Have wpa_supplicant save it's config
+    wpa_run('save_config')
+    sleep(3)
+    # Force wpa_supplicant to re-read it's config file
+    wpa_run('reconfigure')
 
 
-    def list_networks(self) -> list[Mapping[str, Any]]:
-        command = get_cmd('wpa_cli list_networks')
-        result = run(command, text=True, stdout=PIPE, stderr=STDOUT)
+def add_network(profile):
+    # TODO: Implement function to add a network profile
 
-        # Parse the output into a list of tuples
-        output = map(lambda line: tuple(line.split()),result.stdout.splitlines()[2:])
-        networks = []
+    raise NotImplementedError()
 
-        # Convert the 2D array into a list of dictionaries
-        for net in output:
-            if len(net) < 3:
-                continue
+    # Check the type of the passed profile
 
-            network = {
-                "id": net[0],
-                "ssid": net[1],
-                "bssid": net[2],
-                "flags": None,
-                "saved": True
-            }
+    ## If it's a dict, try converting it to a Network object
 
-            if network in self.network_profiles:
-                pass
-
-            if len(net) > 3:
-                network['flags'] = net[3]
-
-            networks.append(network)
-
-        return networks
