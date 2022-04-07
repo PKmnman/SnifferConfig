@@ -8,10 +8,8 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/wsgi/
 """
 
 import os
-import socketio
-from master_sniffer.server import server
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Pawfiguration.settings')
 
-application = socketio.WSGIApp(server, get_wsgi_application())
+application = get_wsgi_application()
