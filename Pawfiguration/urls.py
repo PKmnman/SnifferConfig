@@ -21,7 +21,8 @@ import pawfig.views as app_views
 urlpatterns = [
     #    path('admin/', admin.site.urls),
     path('', app_views.index),
-    path('runcmd/<str:cmd>', app_views.run_cmd),
-    path('wifi/list', app_views.list_wifi, name="wifi-list"),
+    path('runcmd/<str:cmd>/', app_views.run_cmd),
+    path('wifi/list/', app_views.list_wifi, name="wifi-list"),
+    path('wifi/networks/<str:action>/', app_views.networks, name="network_action"),
     path('devices/', app_views.devices, name="devices"),
 ]

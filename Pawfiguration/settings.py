@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-7c9-b^!dw%do5o5z%c3b5c8d+)im6-u0$oy6-8y05*m0_r46h&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.4.1']
+ALLOWED_HOSTS = ['192.168.4.1', '127.0.0.1']
 
 
 # Application definition
@@ -44,7 +44,6 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -81,6 +80,11 @@ DATABASES = {
     }
 }
 
+if sys.platform == 'win32':
+    LOG_FILE = BASE_DIR / '.log' / 'pawfiguration.log'
+else:
+    LOG_FILE = '/var/log/pawfiguration/pawfiguration.log'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -94,7 +98,7 @@ LOGGING = {
         'file': {
             'class': 'logging.handlers.'
                      'TimedRotatingFileHandler',
-            'filename': '/var/log/pawfiguration/pawfiguration.log',
+            'filename': LOG_FILE,
             'when': 'midnight',
             'backupCount': 60,
             'formatter': 'default',

@@ -1,0 +1,7 @@
+<form id="connect-form">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+        <label class="form-label" for="{{ form.ssid.id_for_label }}">{{ form.ssid.label }}</label>
+        {{ form.ssid }}
+    </div>
+</form>

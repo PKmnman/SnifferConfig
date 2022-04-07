@@ -1,16 +1,15 @@
+import pawfig.forms as forms
 import logging
-import subprocess
-import sys
+import json
 import re
 
-import django.http
 from django.http import HttpRequest, HttpResponse, Http404, JsonResponse
 from django.shortcuts import render
 
-from platform import system
-from subprocess import run, Popen, PIPE
-
 from pawfig.models import Device
+from pawfig.helpers.network_utils import list_networks
+
+
 
 LOGGER = logging.getLogger('root')
 
@@ -23,39 +22,15 @@ def index(request):
                       "title": "Pawpharos Configuration"
                   })
 
-## Debug view for testing purposes
-def run_cmd(request, cmd: str):
-    assert isinstance(request, HttpRequest)
-
-    if system() == 'Windows':
-        arguments = re.findall(r'[^\s"\']+|"[^"]+"|\'[^\']+\'', cmd)
-        print(arguments)
-        val = run(cmd, shell=True, capture_output=True)
-        output = val.stdout.decode('utf-8')
-
-        return JsonResponse({"command": cmd, "output": output})
-
-    elif system() == 'Linux':
-        exec = '/bin/bash'
-        arguments = re.split(r'[^\s"\']+|"[^"]+"|\'[^\']+\'', cmd)
-
-        print(arguments)
-        output = None
-        with Popen(executable=exec, args=arguments, stdout=PIPE) as proc:
-            output = proc.stdout.read()
-            print(output)
-
-        return JsonResponse({"command": cmd, "output": output})
-
-    return Http404()
-
 ## Returns a list of registered Wifi Networks
 def list_wifi(request):
     # Only supported when running in a Linux environment
     if request.method == "GET":
+        networks = []
+        """
         shell = ['/bin/bash']
         command = ['-c', 'wpa_cli list_networks']
-        networks = []
+        
         shell.extend(command)
 
         LOGGER.info("Executing shell command: wpa_cli list_networks")
@@ -83,12 +58,27 @@ def list_wifi(request):
                 network["flags"] = fields[3]
             # Store to list of networks
             networks.append(network)
-
+        """
         return render(request, "wifi_list.html", status=200,
                       context={ "network_list": networks})
 
     return Http404()
 
+def get_networks(request: HttpRequest) -> JsonResponse:
+    if request.method == "GET":
+        return JsonResponse(list_networks(), safe=False)
+
+def networks(request: HttpRequest, action: str):
+    if request.method == 'POST':
+
+        if action == 'add':
+            # add the given network to wpa_supplicant
+            return Http404('Not implemented')
+        elif action == 'del':
+            # Forget the given network ssid
+            return Http404('Not implemented')
+
+    return Http404('Invalid request method')
 
 def devices(request):
     return render(request,
@@ -96,6 +86,12 @@ def devices(request):
                   context={
                       'devices': Device.objects.all()
                   })
+
+def account(request: HttpRequest):
+    if request.method == 'GET':
+        return render(request, 'wifi/network-form.html', context={'form': forms.NetworkForm()})
+
+
 
 def test(request, sniffer_serial):
     return render(request, 'test/room.html', {'room_name': sniffer_serial})
