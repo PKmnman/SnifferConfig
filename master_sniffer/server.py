@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 
-logging.basicConfig(stream=sys.stdout, format="[%(asctime)s] %(levelname)s: %(message)s")
+#logging.basicConfig(stream=sys.stdout, format="[%(asctime)s] %(levelname)s: %(message)s")
 
 class SnifferDiscovery(threading.Thread):
 
@@ -17,9 +17,10 @@ class SnifferDiscovery(threading.Thread):
 
     __logger__ = logging.getLogger()
 
-    def __init__(self):
+    def __init__(self, callback=None):
         super(SnifferDiscovery, self).__init__()
         self.interrupted = False
+        self._callback = None
 
 
     def run(self):
@@ -57,8 +58,10 @@ class SnifferDiscovery(threading.Thread):
             fcntl.ioctl(sock.fileno(), 0x8915, struct.pack('256s', ))
             while True:
                 data, addr = sock.recvfrom(1024)
-                print(f'Data recieved from {addr}:\n{data.decode("ASCII")}')
-
+                self.__logger__.info("Device discovered at {}:{}", *addr)
+                self.__logger__.info("Data received from device: {}", data.decode('ASCII'))
+                if self._callback is not None:
+                    self._callback(self, data, addr)
         except:
             if sock is not None:
                 sock.close()
