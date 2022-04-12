@@ -5,13 +5,14 @@ import struct
 import threading
 import time
 import re
-import asyncio
+import queue
 
 #logging.basicConfig(stream=sys.stdout, format="[%(asctime)s] %(levelname)s: %(message)s")
+import requests
 
 from master_sniffer.models import Device
 
-RESPONSE_QUEUE = asyncio.Queue(maxsize=-1)
+RESPONSE_QUEUE = queue.Queue()
 
 class SnifferDiscovery(threading.Thread):
 
@@ -22,10 +23,9 @@ class SnifferDiscovery(threading.Thread):
 
     __logger__ = logging.getLogger()
 
-    def __init__(self, callback=None):
+    def __init__(self):
         super(SnifferDiscovery, self).__init__()
         self.interrupted = False
-        self._callback = None
 
 
     def run(self):
@@ -85,20 +85,21 @@ class DiscoveryHandler(threading.Thread):
         self.poll_responses()
 
     def poll_responses(self):
+        """Consumes discovery responses pushed into the global queue."""
         while True:
             # Wait for a response to show up
-            data, addr = RESPONSE_QUEUE.get()
+            data, addr = RESPONSE_QUEUE.get(block=True)
             if not Device.objects.filter(address=addr[0]).exists():
                 # Decode response data
                 decoded = data.decode('ASCII')
-
+                # Split away the response body if it exists
                 sections = self.separator_pattern.split(decoded, 1)
                 headers = {}
 
                 for head in self.header_pattern.findall(sections[0]):
                     headers[head[1].upper()] = head[2]
 
-                urn = headers["URN"]
+                urn = headers["URN"][5:]
 
                 if not Device.objects.filter(serial_num=urn).exists():
                     # Create a new sniffer device in the registry
@@ -111,35 +112,30 @@ class DiscoveryHandler(threading.Thread):
                     device.save()
 
 
-def device_discovered(thread: SnifferDiscovery, data: bytes, addr: tuple[str, int]):
-    if not Device.objects.filter(address=addr[0]).exists():
-        # TODO: Decode response data
-        decoded = data.decode('ASCII')
-        header_pattern = re.compile(r'^([^:\n]+):(?: ([^\n\r]+))?$', re.MULTILINE | re.ASCII)
-        separator_pattern = re.compile(r'^\n+', re.MULTILINE | re.ASCII)
+class WebUpdateHandler(threading.Thread):
 
-        sections = separator_pattern.split(decoded, 1)
-        headers = {}
+    def __init__(self, q: queue.Queue[requests.Request]):
+        super().__init__()
+        self.update_queue = q
 
-        for head in header_pattern.findall(sections[0]):
-            headers[head[1].upper()] = head[2]
-
-        urn = headers["URN"]
-        location = headers["LOCATION"]
-
-        # TODO: Check if we have a device with the same serial code, if so, update the address and return
-
-        if not Device.objects.filter(serial_num=urn).exists():
-            # Create a new sniffer device in the registry
-            device = Device.objects.create(serail_num=urn, address=addr[0])
-            device.save()
-        elif not Device.objects.get(serial_num=urn).address == addr[0]:
-            # Update address for device
-            device = Device.objects.get(serial_num=urn)
-            device.address = location
-            device.save()
+    def run(self):
         pass
 
+    def update_loop(self):
+        while True:
+            req = self.update_queue.get(block=True)
+            session = requests.session()
+
+            prepped_req = session.prepare_request(req)
+            session.send(prepped_req)
+            self.update_queue.task_done()
+
+    def enqueue(self, data):
+        try:
+            self.update_queue.put(data)
+            return True
+        except queue.Full:
+            return False
 
 if __name__ == '__main__':
     srv = SnifferDiscovery()
