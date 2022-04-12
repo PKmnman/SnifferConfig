@@ -1,7 +1,7 @@
 Django==4.0.3
+djangorestframework
 requests
 gunicorn
-eventlet
 python-socketio
 netifaces>=0.11.0
 Twisted~=22.2.0

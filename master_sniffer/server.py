@@ -2,11 +2,16 @@ import fcntl
 import socket
 import logging
 import struct
-import sys
 import threading
 import time
+import re
+import asyncio
 
 #logging.basicConfig(stream=sys.stdout, format="[%(asctime)s] %(levelname)s: %(message)s")
+
+from master_sniffer.models import Device
+
+RESPONSE_QUEUE = asyncio.Queue(maxsize=-1)
 
 class SnifferDiscovery(threading.Thread):
 
@@ -60,11 +65,81 @@ class SnifferDiscovery(threading.Thread):
                 data, addr = sock.recvfrom(1024)
                 self.__logger__.info("Device discovered at {}:{}", *addr)
                 self.__logger__.info("Data received from device: {}", data.decode('ASCII'))
-                if self._callback is not None:
-                    self._callback(self, data, addr)
+                RESPONSE_QUEUE.put_nowait((data, addr))
+                #if self._callback is not None:
+                #    self._callback(self, data, addr)
         except:
             if sock is not None:
                 sock.close()
+
+
+class DiscoveryHandler(threading.Thread):
+
+    header_pattern = re.compile(r'^([^:\n]+):(?: ([^\n\r]+))?$', re.MULTILINE | re.ASCII)
+    separator_pattern = re.compile(r'^\n+', re.MULTILINE | re.ASCII)
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self) -> None:
+        self.poll_responses()
+
+    def poll_responses(self):
+        while True:
+            # Wait for a response to show up
+            data, addr = RESPONSE_QUEUE.get()
+            if not Device.objects.filter(address=addr[0]).exists():
+                # Decode response data
+                decoded = data.decode('ASCII')
+
+                sections = self.separator_pattern.split(decoded, 1)
+                headers = {}
+
+                for head in self.header_pattern.findall(sections[0]):
+                    headers[head[1].upper()] = head[2]
+
+                urn = headers["URN"]
+
+                if not Device.objects.filter(serial_num=urn).exists():
+                    # Create a new sniffer device in the registry
+                    device = Device.objects.create(serail_num=urn, address=addr[0])
+                    device.save()
+                elif not Device.objects.get(serial_num=urn).address == addr[0]:
+                    # Update address for device
+                    device = Device.objects.get(serial_num=urn)
+                    device.address = addr[0]
+                    device.save()
+
+
+def device_discovered(thread: SnifferDiscovery, data: bytes, addr: tuple[str, int]):
+    if not Device.objects.filter(address=addr[0]).exists():
+        # TODO: Decode response data
+        decoded = data.decode('ASCII')
+        header_pattern = re.compile(r'^([^:\n]+):(?: ([^\n\r]+))?$', re.MULTILINE | re.ASCII)
+        separator_pattern = re.compile(r'^\n+', re.MULTILINE | re.ASCII)
+
+        sections = separator_pattern.split(decoded, 1)
+        headers = {}
+
+        for head in header_pattern.findall(sections[0]):
+            headers[head[1].upper()] = head[2]
+
+        urn = headers["URN"]
+        location = headers["LOCATION"]
+
+        # TODO: Check if we have a device with the same serial code, if so, update the address and return
+
+        if not Device.objects.filter(serial_num=urn).exists():
+            # Create a new sniffer device in the registry
+            device = Device.objects.create(serail_num=urn, address=addr[0])
+            device.save()
+        elif not Device.objects.get(serial_num=urn).address == addr[0]:
+            # Update address for device
+            device = Device.objects.get(serial_num=urn)
+            device.address = location
+            device.save()
+        pass
+
 
 if __name__ == '__main__':
     srv = SnifferDiscovery()
