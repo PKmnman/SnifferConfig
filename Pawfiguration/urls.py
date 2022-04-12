@@ -14,15 +14,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 # from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 import pawfig.views as app_views
 
 urlpatterns = [
     #    path('admin/', admin.site.urls),
     path('', app_views.index),
-    path('runcmd/<str:cmd>/', app_views.run_cmd),
+    #path('runcmd/<str:cmd>/', app_views.run_cmd),
     path('wifi/list/', app_views.list_wifi, name="wifi-list"),
     path('wifi/networks/<str:action>/', app_views.networks, name="network_action"),
     path('devices/', app_views.devices, name="devices"),
+    path('login/', app_views.login, name='login'),
+    path('api/', include('master_sniffer.urls')),
 ]

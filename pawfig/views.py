@@ -1,14 +1,17 @@
+import requests
+
+import master_sniffer
 import pawfig.forms as forms
 import logging
-import json
-import re
+
 
 from django.http import HttpRequest, HttpResponse, Http404, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from pawfig.models import Device
 from pawfig.helpers.network_utils import list_networks
 
+from master_sniffer.apps import SNIFFER_CONFIG
 
 
 LOGGER = logging.getLogger('root')
@@ -16,49 +19,38 @@ LOGGER = logging.getLogger('root')
 ## Homepage view
 def index(request):
     assert isinstance(request, HttpRequest)
+    if SNIFFER_CONFIG.credentials[1] is None:
+        return redirect('login')
 
     return render(request, "index.html",
                   context={
                       "title": "Pawpharos Configuration"
                   })
 
+def login(request: HttpRequest):
+    if request.method == "GET":
+        return render(request, "login.html",
+                      context={
+                          "title": "Pawpharos Configuration - Login",
+                          "form": forms.LoginForm
+                      })
+    elif request.method == "POST":
+        data = {}
+        form = forms.LoginForm(request.POST)
+        if form.is_valid():
+            SNIFFER_CONFIG.credentials = form.cleaned_data['username'], form.get_token()
+            SNIFFER_CONFIG.save()
+        resp = requests.post(
+            url=master_sniffer.WEB_SERVER_URL + 'api-token-auth/',
+            data=data
+        )
+
+
 ## Returns a list of registered Wifi Networks
 def list_wifi(request):
     # Only supported when running in a Linux environment
     if request.method == "GET":
         networks = []
-        """
-        shell = ['/bin/bash']
-        command = ['-c', 'wpa_cli list_networks']
-        
-        shell.extend(command)
-
-        LOGGER.info("Executing shell command: wpa_cli list_networks")
-        result = run(shell, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        output = result.stdout
-        LOGGER.info("Return code = %d", result.returncode)
-        LOGGER.info("Command output: %s", output)
-        LOGGER.info("Command error: %s", result.stderr)
-        # Parse output
-        lines = re.split(r'\n|\n\r', output)[2:]
-        LOGGER.info(f"Found {len(lines)} network profiles...")
-        for line in lines:
-            fields = re.split(r'[^\n\S]+', line)
-            if len(fields) < 3:
-                continue
-            network = {
-                "id": fields[0],
-                "ssid": fields[1],
-                "bssid": fields[2],
-                "flags": None
-            }
-
-            if len(fields) > 3:
-                network["flags"] = fields[3]
-            # Store to list of networks
-            networks.append(network)
-        """
         return render(request, "wifi_list.html", status=200,
                       context={ "network_list": networks})
 
@@ -91,10 +83,6 @@ def account(request: HttpRequest):
     if request.method == 'GET':
         return render(request, 'wifi/network-form.html', context={'form': forms.NetworkForm()})
 
-
-
-def test(request, sniffer_serial):
-    return render(request, 'test/room.html', {'room_name': sniffer_serial})
 
 
 def test_index(request):

@@ -1,4 +1,8 @@
 import django.forms as forms
+import requests
+
+import master_sniffer
+
 
 class NetworkForm(forms.Form):
 
@@ -70,5 +74,38 @@ class NetworkForm(forms.Form):
         self.render('wifi/network-form.html', context={ 'form': self })
 
 
+class LoginForm(forms.Form):
+
+    username = forms.CharField(
+        widget=forms.TextInput({
+            "class": "form-control"
+        })
+    )
+
+    password = forms.CharField(
+        widget=forms.PasswordInput({
+            "class": "form-control"
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.token = None
+
+    def is_valid(self):
+        if super().is_valid():
+            self.get_token()
+            return True
+        return False
 
 
+    def get_token(self):
+        resp = requests.post(
+            url=master_sniffer.WEB_SERVER_URL + "api/api-token-auth/",
+            data={
+                "username": self.cleaned_data['username'],
+                "password": self.cleaned_data['password']
+            }
+        )
+
+        self.token = resp.json()["token"]

@@ -1,6 +1,5 @@
 import os.path
 import pathlib
-import sys
 from configparser import ConfigParser
 from typing import Optional
 
@@ -10,15 +9,14 @@ class Config:
     _config_file: pathlib.Path
 
     def __init__(self):
-        if sys.platform == 'linux' and not os.path.exists('/etc/pawfiguration'):
-            os.makedirs('/etc/pawfiguration')
+        os.makedirs('/etc/pawfiguration', exist_ok=True)
 
-            self._config_file = pathlib.PosixPath('/etc/pawfiguration/config.ini')
-            if not self._config_file.exists():
-                self._create_ini(self._config_file)
+        self._config_file = pathlib.PosixPath('/etc/pawfiguration/config.ini')
+        if not self._config_file.exists():
+            self._create_ini(self._config_file)
 
-            self._parser.read(self._config_file)
-            self._account = self._parser['Account']
+        self._parser.read(self._config_file)
+        self._account = self._parser['Account']
 
     def _create_ini(self, path):
         with path.open(mode='w') as f:
@@ -28,10 +26,12 @@ class Config:
     @property
     def credentials(self):
         """Retrieves the user api credentials from the config file."""
+        if self._account is None:
+            return None, None
         username = self._account.get('username')
         # This is unsecure but fine for the time being
         token = self._account.get('access_token')
-        return username, token
+        return (username, token)
 
     @credentials.setter
     def credentials(self, cred: tuple[Optional[str], Optional[str]]):

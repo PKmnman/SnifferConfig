@@ -1,0 +1,39 @@
+{% extends 'shared/_layout.html' %}
+
+{% block content %}
+<div class="container p-3">
+    <div class="row">
+        <div class="col-md-8">
+            <section id="loginForm">
+                <form action="." method="post" class="form-horizontal">
+                    {% csrf_token %}
+                    <h2>{{ title }}</h2>
+                    <h4>Use a local account to log in.</h4>
+                    <hr />
+                    <div class="form-group mb-3">
+                        <label for="id_username" class="col-md-2 control-label">User name</label>
+                        <div class="col-md-10">
+                            {{ form.username }}
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_password" class="col-md-2 control-label">Password</label>
+                        <div class="col-md-10">
+                            {{ form.password }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="hidden" name="next" value="/" />
+                            <input type="submit" value="Log in" class="btn btn-primary" />
+                        </div>
+                    </div>
+                    {% if form.errors %}
+                    <p class="validation-summary-errors">Please enter a correct user name and password.</p>
+                    {% endif %}
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
