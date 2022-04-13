@@ -14,7 +14,6 @@ from pawfig.helpers.network_utils import list_networks
 
 LOGGER = logging.getLogger('root')
 
-## Homepage view
 
 
 ## Returns a list of registered Wifi Networks
