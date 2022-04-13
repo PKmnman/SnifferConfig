@@ -1,4 +1,4 @@
-#import fcntl
+# import fcntl
 import socket
 import logging
 import struct
@@ -13,8 +13,8 @@ from master_sniffer.models import Device
 
 RESPONSE_QUEUE = queue.Queue()
 
-class SnifferDiscovery(threading.Thread):
 
+class SnifferDiscovery(threading.Thread):
     SEARCH_INTERVAL = 5
     BROADCAST_IP = '239.255.255.250'
     UPNP_PORT = 1900
@@ -26,7 +26,6 @@ class SnifferDiscovery(threading.Thread):
         super(SnifferDiscovery, self).__init__()
         self.interrupted = False
         self.response_queue = q
-
 
     def run(self):
         self.loop_search()
@@ -60,7 +59,7 @@ class SnifferDiscovery(threading.Thread):
             sock.bind(('192.168.4.1', 1900))
             sock.sendto(DISCOVER.encode('ASCII'), (self.BROADCAST_IP, self.UPNP_PORT))
             sock.settimeout(3)
-            #fcntl.ioctl(sock.fileno(), 0x8915, struct.pack('256s', ))
+            # fcntl.ioctl(sock.fileno(), 0x8915, struct.pack('256s', ))
             while True:
                 data, addr = sock.recvfrom(1024)
                 self.__logger__.info("Device discovered at {}:{}", *addr)
@@ -72,7 +71,6 @@ class SnifferDiscovery(threading.Thread):
 
 
 class DiscoveryHandler(threading.Thread):
-
     header_pattern = re.compile(r'^([^:\n]+):(?: ([^\n\r]+))?$', re.MULTILINE | re.ASCII)
     separator_pattern = re.compile(r'^\n+', re.MULTILINE | re.ASCII)
 
@@ -129,7 +127,6 @@ class DiscoveryHandler(threading.Thread):
 
 
 class WebUpdateHandler(threading.Thread):
-
     UPDATE_INTERVAL = 5
 
     __logger__ = logging.getLogger()
@@ -167,6 +164,8 @@ class WebUpdateHandler(threading.Thread):
                 # If there are no requests to process, end the loop
                 break
             else:
+                token = '9cf6a67a3904cdeec16bcdc89caa098e79ae4520'
+                req.headers["Authentication"] = f'Token{token}'
                 # Prepare and send the request
                 prepped_req = session.prepare_request(req)
                 self.__logger__.debug("Processing")
@@ -179,4 +178,3 @@ class WebUpdateHandler(threading.Thread):
                 if iter_num >= 10:
                     break
         session.close()
-
