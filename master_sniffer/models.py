@@ -7,6 +7,9 @@ class TrackingEvent(models.Model):
     event_time = models.DateTimeField()
     rssi = models.IntegerField()
 
+    class Meta:
+        ordering = ['-event_time']
+
 
 class Device(models.Model):
     app_label = "master_sniffer"

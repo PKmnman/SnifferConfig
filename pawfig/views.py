@@ -19,8 +19,6 @@ LOGGER = logging.getLogger('root')
 ## Homepage view
 def index(request):
     assert isinstance(request, HttpRequest)
-    if SNIFFER_CONFIG.credentials[1] is None:
-        return redirect('login')
 
     return render(request, "index.html",
                   context={
