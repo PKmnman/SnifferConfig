@@ -45,7 +45,7 @@ def list_events(request):
                     'rssi': event.rssi
                 }
             )
-            logging.info('Update request added to queue.')
+            logging.info('Request sent to server with response code %d.', req.status_code)
             # Then queue this event to get pushed to the webserver
             # REQUEST_QUEUE.put_nowait(req)
             return JsonResponse(serializer.data, content_type='application/json', status=status.HTTP_201_CREATED)
