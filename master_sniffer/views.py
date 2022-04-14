@@ -43,6 +43,10 @@ def list_events(request):
                     'beacon_addr': event.beacon_addr,
                     'event_time': event.event_time.isoformat(),
                     'rssi': event.rssi
+                },
+                headers={
+                    'Authentication': 'Token 9cf6a67a3904cdeec16bcdc89caa098e79ae4520',
+                    'Host': 'pawpharos.com'
                 }
             )
             logging.info('Request sent to server with response code %d.', req.status_code)
