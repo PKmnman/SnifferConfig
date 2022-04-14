@@ -14,7 +14,6 @@ class SnifferConfig(AppConfig):
 
     def ready(self):
         from master_sniffer.server import WebUpdateHandler, DiscoveryHandler, SnifferDiscovery
-        from master_sniffer.config import Config
         from queue import Queue
 
         global WEB_SERVER_URL, RESPONSE_QUEUE, WEB_REQUEST_QUEUE, SNIFFER_CONFIG

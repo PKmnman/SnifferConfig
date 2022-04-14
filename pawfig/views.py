@@ -11,37 +11,9 @@ from django.shortcuts import render, redirect
 from pawfig.models import Device
 from pawfig.helpers.network_utils import list_networks
 
-from master_sniffer.apps import SNIFFER_CONFIG
-
 
 LOGGER = logging.getLogger('root')
 
-## Homepage view
-def index(request):
-    assert isinstance(request, HttpRequest)
-
-    return render(request, "index.html",
-                  context={
-                      "title": "Pawpharos Configuration"
-                  })
-
-def login(request: HttpRequest):
-    if request.method == "GET":
-        return render(request, "login.html",
-                      context={
-                          "title": "Pawpharos Configuration - Login",
-                          "form": forms.LoginForm
-                      })
-    elif request.method == "POST":
-        data = {}
-        form = forms.LoginForm(request.POST)
-        if form.is_valid():
-            SNIFFER_CONFIG.credentials = form.cleaned_data['username'], form.get_token()
-            SNIFFER_CONFIG.save()
-        resp = requests.post(
-            url=master_sniffer.WEB_SERVER_URL + 'api-token-auth/',
-            data=data
-        )
 
 
 ## Returns a list of registered Wifi Networks
