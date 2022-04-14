@@ -6,7 +6,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from master_sniffer.serializers import TrackingEventSerializer
 from master_sniffer.models import TrackingEvent
-from master_sniffer.apps import WEB_REQUEST_QUEUE, WEB_SERVER_URL
+from master_sniffer.apps import WEB_SERVER_URL
+from Pawfiguration import REQUEST_QUEUE
 from requests import Request
 from datetime import timedelta
 
@@ -45,7 +46,7 @@ def list_events(request):
                 )
                 logging.info('Update request added to queue.')
                 # Then queue this event to get pushed to the webserver
-                WEB_REQUEST_QUEUE.put_nowait(req)
+                REQUEST_QUEUE.put_nowait(req)
                 return JsonResponse(serializer.data, content_type='application/json', status=status.HTTP_201_CREATED)
             else:
                 logging.info('Duplicate event detected, ignoring!')

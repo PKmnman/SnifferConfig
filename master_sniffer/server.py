@@ -13,7 +13,7 @@ from master_sniffer.models import Device
 
 RESPONSE_QUEUE = queue.Queue()
 
-
+'''
 class SnifferDiscovery(threading.Thread):
     SEARCH_INTERVAL = 5
     BROADCAST_IP = '239.255.255.250'
@@ -124,7 +124,7 @@ class DiscoveryHandler(threading.Thread):
                 device = Device.objects.get(serial_num=urn)
                 device.address = addr[0]
                 device.save()
-
+'''
 
 class WebUpdateHandler(threading.Thread):
     UPDATE_INTERVAL = 5
