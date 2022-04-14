@@ -45,7 +45,7 @@ def list_events(request):
                     'rssi': event.rssi
                 },
                 headers={
-                    'Authentication': 'Token 9cf6a67a3904cdeec16bcdc89caa098e79ae4520',
+                    'Authentication': 'Token 393be039779f7799ea090b6d5006ed5980b3c7e5',
                     'Host': 'pawpharos.com'
                 }
             )
