@@ -30,14 +30,16 @@ def list_events(request):
                 event = serializer.create(serializer.validated_data)
 
                 event.save()
-                req = Request()
-                req.url = WEB_SERVER_URL
-                req.json = {
-                    'sniffer_serial': event.sniffer_serial,
-                    'beacon_addr': event.beacon_addr,
-                    'event_time': event.event_time,
-                    'rssi': event.rssi
-                }
+                req = Request(
+                    method='POST',
+                    url=WEB_SERVER_URL,
+                    json= {
+                        'sniffer_serial': event.sniffer_serial,
+                        'beacon_addr': event.beacon_addr,
+                        'event_time': event.event_time,
+                        'rssi': event.rssi
+                    }
+                )
 
                 # Then queue this event to get pushed to the webserver
                 WEB_REQUEST_QUEUE.put_nowait(req)
