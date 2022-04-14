@@ -37,7 +37,7 @@ def list_events(request):
             event.save()
             req = requests.request(
                 method='POST',
-                url=WEB_SERVER_URL + 'api/events/',
+                url='https://pawpharos.com/api/events/',
                 json={
                     'sniffer_serial': event.sniffer_serial,
                     'beacon_addr': event.beacon_addr,
@@ -45,7 +45,7 @@ def list_events(request):
                     'rssi': event.rssi
                 },
                 headers={
-                    'Authentication': 'Token 393be039779f7799ea090b6d5006ed5980b3c7e5',
+                    'Authorization': 'Token 393be039779f7799ea090b6d5006ed5980b3c7e5',
                     'Host': 'pawpharos.com'
                 }
             )
