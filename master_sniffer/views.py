@@ -1,5 +1,6 @@
 import logging
 
+import requests
 from django.http.response import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -34,7 +35,7 @@ def list_events(request):
                 event = serializer.create(serializer.validated_data)
                 logging.info('Tracking event from %s created! Beacon MAC %s detected.', event.sniffer_serial, event.beacon_addr)
                 event.save()
-                req = Request(
+                req = requests.request(
                     method='POST',
                     url=WEB_SERVER_URL,
                     json= {
@@ -46,7 +47,7 @@ def list_events(request):
                 )
                 logging.info('Update request added to queue.')
                 # Then queue this event to get pushed to the webserver
-                REQUEST_QUEUE.put_nowait(req)
+                #REQUEST_QUEUE.put_nowait(req)
                 return JsonResponse(serializer.data, content_type='application/json', status=status.HTTP_201_CREATED)
             else:
                 logging.info('Duplicate event detected, ignoring!')

@@ -59,5 +59,5 @@ class WebUpdateHandler(threading.Thread):
                     break
         session.close()
 
-request_handler = WebUpdateHandler(REQUEST_QUEUE)
-request_handler.start()
+#request_handler = WebUpdateHandler(REQUEST_QUEUE)
+#request_handler.start()
