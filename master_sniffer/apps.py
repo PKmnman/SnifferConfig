@@ -19,7 +19,6 @@ class SnifferConfig(AppConfig):
         global WEB_SERVER_URL, RESPONSE_QUEUE, WEB_REQUEST_QUEUE, SNIFFER_CONFIG
         RESPONSE_QUEUE = Queue()
         WEB_REQUEST_QUEUE = Queue()
-        SNIFFER_CONFIG = Config()
 
         def initialize_threads():
             web_handler = WebUpdateHandler(WEB_REQUEST_QUEUE)
@@ -31,6 +30,3 @@ class SnifferConfig(AppConfig):
             discovery_handler.start()
 
         initialize_threads()
-        # Check to see if we have an auth token stored
-        global TOKEN_AUTH
-        TOKEN_AUTH = SNIFFER_CONFIG.credentials[1] is not None
