@@ -1,3 +1,5 @@
+
+
 from django.apps import AppConfig
 
 
@@ -15,6 +17,7 @@ class SnifferConfig(AppConfig):
     def ready(self):
         from master_sniffer.server import WebUpdateHandler, DiscoveryHandler, SnifferDiscovery
         from queue import Queue
+        import atexit
 
         global WEB_SERVER_URL, RESPONSE_QUEUE, WEB_REQUEST_QUEUE, SNIFFER_CONFIG
         RESPONSE_QUEUE = Queue()
@@ -28,3 +31,7 @@ class SnifferConfig(AppConfig):
         web_handler.start()
         discovery_server.start()
         discovery_handler.start()
+
+        atexit.register(web_handler.stop)
+        atexit.register(discovery_handler.stop)
+        atexit.register(discovery_server.stop)
