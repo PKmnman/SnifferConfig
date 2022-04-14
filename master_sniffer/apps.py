@@ -20,13 +20,11 @@ class SnifferConfig(AppConfig):
         RESPONSE_QUEUE = Queue()
         WEB_REQUEST_QUEUE = Queue()
 
-        def initialize_threads():
-            web_handler = WebUpdateHandler(WEB_REQUEST_QUEUE)
-            discovery_handler = DiscoveryHandler(RESPONSE_QUEUE)
-            discovery_server = SnifferDiscovery(RESPONSE_QUEUE)
 
-            web_handler.start()
-            discovery_server.start()
-            discovery_handler.start()
+        web_handler = WebUpdateHandler(WEB_REQUEST_QUEUE)
+        discovery_handler = DiscoveryHandler(RESPONSE_QUEUE)
+        discovery_server = SnifferDiscovery(RESPONSE_QUEUE)
 
-        initialize_threads()
+        web_handler.start()
+        discovery_server.start()
+        discovery_handler.start()
