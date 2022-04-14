@@ -13,7 +13,7 @@ import signal
 
 import Pawfiguration
 
-signal.signal(signal.SIGTERM, Pawfiguration.request_handler.stop)
+#signal.signal(signal.SIGTERM, Pawfiguration.request_handler.stop)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Pawfiguration.settings')
 
