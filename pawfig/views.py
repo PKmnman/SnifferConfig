@@ -14,7 +14,8 @@ from pawfig.helpers.network_utils import list_networks
 
 LOGGER = logging.getLogger('root')
 
-
+def index(request):
+    return render(request, "index.html", context={"title": "Pawfiguration"})
 
 ## Returns a list of registered Wifi Networks
 def list_wifi(request):
