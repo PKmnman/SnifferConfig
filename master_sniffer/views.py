@@ -37,7 +37,7 @@ def list_events(request):
             event.save()
             req = requests.request(
                 method='POST',
-                url=WEB_SERVER_URL,
+                url=WEB_SERVER_URL + 'api/events/',
                 json={
                     'sniffer_serial': event.sniffer_serial,
                     'beacon_addr': event.beacon_addr,
