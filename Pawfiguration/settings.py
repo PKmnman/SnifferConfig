@@ -106,10 +106,21 @@ LOGGING = {
             'formatter': 'default',
         },
     },
-    'root': {
-        'handlers': ['file'],
-        'level': 'INFO',
-    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'mail_admins', 'file'],
+            'level': 'INFO',
+        },
+        'django.server': {
+            'handlers': ['django.server', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'root': {
+                'handlers': ['file'],
+                'level': 'INFO'
+            }
+        }
 }
 
 # Password validation
