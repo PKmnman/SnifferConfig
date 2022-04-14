@@ -41,7 +41,7 @@ def list_events(request):
                 json={
                     'sniffer_serial': event.sniffer_serial,
                     'beacon_addr': event.beacon_addr,
-                    'event_time': event.event_time,
+                    'event_time': event.event_time.isoformat(),
                     'rssi': event.rssi
                 }
             )
