@@ -25,6 +25,5 @@ urlpatterns = [
     path('wifi/list/', app_views.list_wifi, name="wifi-list"),
     path('wifi/networks/<str:action>/', app_views.networks, name="network_action"),
     path('devices/', app_views.devices, name="devices"),
-    path('login/', app_views.login, name='login'),
     path('api/', include('master_sniffer.urls')),
 ]
